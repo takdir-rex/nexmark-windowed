@@ -121,7 +121,7 @@ public class NexmarkGenerator implements Iterator<TimestampedValue<Event>>, Seri
     this.eventsCountSoFar = eventsCountSoFar;
     this.wallclockBaseTime = wallclockBaseTime;
     // random generator
-    this.random = new Random();
+    this.random = new Random(5);
   }
 
   /** Create a fresh generator according to {@code config}. */

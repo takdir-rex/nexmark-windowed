@@ -65,9 +65,15 @@ public class Benchmark {
 
 	public static final String CATEGORY_OA = "oa";
 
+	private static final Option SNAPSHOTGROUPS = new Option("g", "snapshotgroups", true,
+			"Comma separated indexes of snapshot groups to be created");
+
+	private static final Option SLOTSHARINGGROUPS = new Option("s", "slotsharinggroups", true,
+			"Comma separated indexes of slot sharing groups to be created");
+
 	public static void main(String[] args) throws ParseException {
 		if (args == null || args.length == 0) {
-			throw new RuntimeException("Usage: --queries q1,q3 --category oa --location /path/to/nexmark");
+			throw new RuntimeException("Usage: --queries q1,q3 --category oa --location /path/to/nexmark -g <snapshotgroups> -s <slotsharinggroups>");
 		}
 		Options options = getOptions();
 		DefaultParser parser = new DefaultParser();
@@ -78,10 +84,12 @@ public class Benchmark {
 		Path queryLocation = isQueryOa ? location.resolve("queries") : location.resolve("queries-" + category);
 		List<String> queries = getQueries(queryLocation, line.getOptionValue(QUERIES.getOpt()), isQueryOa);
 		System.out.println("Benchmark Queries: " + queries);
-		runQueries(queries, location, category);
+		String snapshotGroups = line.getOptionValue(SNAPSHOTGROUPS.getOpt(), "");
+		String slotsharingtGroups = line.getOptionValue(SLOTSHARINGGROUPS.getOpt(), "");
+		runQueries(queries, location, category, snapshotGroups, slotsharingtGroups);
 	}
 
-	private static void runQueries(List<String> queries, Path location, String category) {
+	private static void runQueries(List<String> queries, Path location, String category, String snapshotGroups, String slotsharingtGroups) {
 		String flinkHome = System.getenv("FLINK_HOME");
 		if (flinkHome == null) {
 			throw new IllegalArgumentException("FLINK_HOME environment variable is not set.");
@@ -117,7 +125,9 @@ public class Benchmark {
 				location,
 				flinkDist,
 				totalMetrics,
-				category);
+				category,
+				snapshotGroups,
+				slotsharingtGroups);
 
 		// print benchmark summary
 		printSummary(totalMetrics);
@@ -174,7 +184,9 @@ public class Benchmark {
 			Path location,
 			Path flinkDist,
 			LinkedHashMap<String, JobBenchmarkMetric> totalMetrics,
-			String category) {
+			String category,
+			String snapshotGroups,
+			String slotsharingtGroups) {
 		for (String queryName : queries) {
 			Workload workload = workloadSuite.getQueryWorkload(queryName);
 			if (workload == null) {
@@ -198,9 +210,11 @@ public class Benchmark {
 							flinkDist,
 							reporter,
 							flinkRestClient,
-							category);
+							category,
+							snapshotGroups,
+							slotsharingtGroups);
 			JobBenchmarkMetric metric = runner.run();
-			totalMetrics.put(queryName, metric);
+//			totalMetrics.put(queryName, metric);
 		}
 	}
 
@@ -303,6 +317,7 @@ public class Benchmark {
 		options.addOption(QUERIES);
 		options.addOption(CATEGORY);
 		options.addOption(LOCATION);
+		options.addOption(SNAPSHOTGROUPS);
 		return options;
 	}
 }

@@ -50,7 +50,11 @@ public class QueryRunner {
 	private final MetricReporter metricReporter;
 	private final FlinkRestClient flinkRestClient;
 
-	public QueryRunner(String queryName, Workload workload, Path location, Path flinkDist, MetricReporter metricReporter, FlinkRestClient flinkRestClient, String category) {
+	private final String snapshotGroups;
+
+	private final String slotsharingtGroups;
+
+	public QueryRunner(String queryName, Workload workload, Path location, Path flinkDist, MetricReporter metricReporter, FlinkRestClient flinkRestClient, String category, String snapshotGroups, String slotsharingtGroups) {
 		this.queryName = queryName;
 		this.workload = workload;
 		this.location = location;
@@ -59,6 +63,8 @@ public class QueryRunner {
 		this.flinkDist = flinkDist;
 		this.metricReporter = metricReporter;
 		this.flinkRestClient = flinkRestClient;
+		this.snapshotGroups = snapshotGroups;
+		this.slotsharingtGroups = slotsharingtGroups;
 	}
 
 	public JobBenchmarkMetric run() {
@@ -67,27 +73,28 @@ public class QueryRunner {
 			System.out.println("Start to run query " + queryName + " with workload " + workload.getSummaryString());
 			LOG.info("==================================================================");
 			LOG.info("Start to run query " + queryName + " with workload " + workload.getSummaryString());
-			if (!"insert_kafka".equals(queryName) // no warmup for kafka source prepare
-					&& (workload.getWarmupMills() > 0L || workload.getKafkaServers() == null)  // when using kafka source we need a stop for warmup
-					&& ((workload.getWarmupTps() > 0L && workload.getWarmupEvents() > 0L) || workload.getKafkaServers() != null) // otherwise we need a configuration for datagen source
-			) {
-				System.out.println("Start the warmup for at most " + workload.getWarmupMills() + "ms and " + workload.getWarmupEvents() + " events.");
-				LOG.info("Start the warmup for at most " + workload.getWarmupMills() + "ms and " + workload.getWarmupEvents() + " events.");
-				runWarmup(workload.getWarmupTps(), workload.getWarmupEvents());
-				long waited = waitForOrJobFinish(workload.getWarmupMills());
-				waited += cancelJob();
-				System.out.println("Stop the warmup, cost " + waited + "ms.");
-				LOG.info("Stop the warmup, cost " + waited + ".");
-			}
+//			if (!"insert_kafka".equals(queryName) // no warmup for kafka source prepare
+//					&& (workload.getWarmupMills() > 0L || workload.getKafkaServers() == null)  // when using kafka source we need a stop for warmup
+//					&& ((workload.getWarmupTps() > 0L && workload.getWarmupEvents() > 0L) || workload.getKafkaServers() != null) // otherwise we need a configuration for datagen source
+//			) {
+//				System.out.println("Start the warmup for at most " + workload.getWarmupMills() + "ms and " + workload.getWarmupEvents() + " events.");
+//				LOG.info("Start the warmup for at most " + workload.getWarmupMills() + "ms and " + workload.getWarmupEvents() + " events.");
+//				runWarmup(workload.getWarmupTps(), workload.getWarmupEvents());
+//				long waited = waitForOrJobFinish(workload.getWarmupMills());
+//				waited += cancelJob();
+//				System.out.println("Stop the warmup, cost " + waited + "ms.");
+//				LOG.info("Stop the warmup, cost " + waited + ".");
+//			}
 			runInternal();
-			// blocking until collect enough metrics
-			String jobId = flinkRestClient.getCurrentJobId();
-			JobBenchmarkMetric metrics = metricReporter.reportMetric(jobId, workload.getEventsNum());
-			// cancel job
-			System.out.println("Stop job query " + queryName);
-			LOG.info("Stop job query " + queryName);
-			cancelJob();
-			return metrics;
+//			// blocking until collect enough metrics
+//			String jobId = flinkRestClient.getCurrentJobId();
+//			JobBenchmarkMetric metrics = metricReporter.reportMetric(jobId, workload.getEventsNum());
+//			// cancel job
+//			System.out.println("Stop job query " + queryName);
+//			LOG.info("Stop job query " + queryName);
+//			cancelJob();
+//			return metrics;
+			return null;
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -181,6 +188,10 @@ public class QueryRunner {
 		final List<String> commands = new ArrayList<>();
 		commands.add(flinkBin.resolve("sql-client.sh").toAbsolutePath().toString());
 		commands.add("embedded");
+		commands.add("-g");
+		commands.add(snapshotGroups);
+		commands.add("-s");
+		commands.add(slotsharingtGroups);
 
 		LOG.info("\n================================================================================"
 				+ "\nQuery {} is running."

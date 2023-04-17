@@ -52,7 +52,7 @@ public class BidGenerator {
             @Override
             public Tuple2<String, String> getNewInstance(Integer channelNumber) {
               String url = getBaseUrl();
-              if (new Random().nextInt(10) > 0) {
+              if (new Random(6).nextInt(10) > 0) {
                 url = url + "&channel_id=" + Math.abs(Integer.reverse(channelNumber));
               }
               return new Tuple2<>("channel-" + channelNumber, url);
@@ -105,7 +105,7 @@ public class BidGenerator {
   }
 
   private static String getBaseUrl() {
-    Random random = new Random();
+    Random random = new Random(7);
     return "https://www.nexmark.com/" +
             nextString(random, 5, '_') + '/' +
             nextString(random, 5, '_') + '/' +
