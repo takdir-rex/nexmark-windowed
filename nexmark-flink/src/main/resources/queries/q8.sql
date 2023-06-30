@@ -9,27 +9,32 @@
 -- -------------------------------------------------------------------------------------------------
 
 CREATE TABLE discard_sink (
-  id  BIGINT,
-  name  VARCHAR,
-  stime  TIMESTAMP(3)
+                              id  BIGINT,
+                              name  VARCHAR,
+                              stime  TIMESTAMP(3)
 ) WITH (
-  'connector' = 'blackhole'
-);
+      'connector' = 'blackhole'
+      );
 
 INSERT INTO discard_sink
-SELECT P.id, P.name, P.starttime
+SELECT
+    Q.id,
+    Q.name,
+    Q.window_start
 FROM (
-  SELECT P.id, P.name,
-         TUMBLE_START(P.dateTime, INTERVAL '10' SECOND) AS starttime,
-         TUMBLE_END(P.dateTime, INTERVAL '10' SECOND) AS endtime
-  FROM person P
-  GROUP BY P.id, P.name, TUMBLE(P.dateTime, INTERVAL '10' SECOND)
-) P
-JOIN (
-  SELECT A.seller,
-         TUMBLE_START(A.dateTime, INTERVAL '10' SECOND) AS starttime,
-         TUMBLE_END(A.dateTime, INTERVAL '10' SECOND) AS endtime
-  FROM auction A
-  GROUP BY A.seller, TUMBLE(A.dateTime, INTERVAL '10' SECOND)
-) A
-ON P.id = A.seller AND P.starttime = A.starttime AND P.endtime = A.endtime;
+         SELECT P.id, P.name,
+                COALESCE(P.window_start, A.window_start) as window_start,
+                COALESCE(P.window_end, A.window_end) as window_end
+         FROM (
+                  SELECT id, name, window_start, window_end
+                  FROM TABLE(TUMBLE(TABLE person, DESCRIPTOR(dateTime), INTERVAL '10' SECOND))
+                  GROUP BY id, name, window_start, window_end
+              ) P
+                  JOIN (
+             SELECT seller, window_start, window_end
+             FROM TABLE(TUMBLE(TABLE auction, DESCRIPTOR(dateTime), INTERVAL '10' SECOND))
+             GROUP BY seller, window_start, window_end
+         ) A
+                       ON P.id = A.seller AND P.window_start = A.window_start AND P.window_end = A.window_end
+     ) Q
+GROUP BY Q.id, Q.name, Q.window_start, Q.window_end;

@@ -10,42 +10,48 @@
 -- -------------------------------------------------------------------------------------------------
 
 CREATE TABLE discard_sink (
-  auction  BIGINT,
-  num  BIGINT
+                            auction  BIGINT,
+                            num  BIGINT
 ) WITH (
-  'connector' = 'blackhole'
-);
+    'connector' = 'blackhole'
+    );
 
 INSERT INTO discard_sink
-SELECT AuctionBids.auction, AuctionBids.num
- FROM (
-   SELECT
-     B1.auction,
-     count(*) AS num,
-     HOP_START(B1.dateTime, INTERVAL '2' SECOND, INTERVAL '10' SECOND) AS starttime,
-     HOP_END(B1.dateTime, INTERVAL '2' SECOND, INTERVAL '10' SECOND) AS endtime
-   FROM bid B1
-   GROUP BY
-     B1.auction,
-     HOP(B1.dateTime, INTERVAL '2' SECOND, INTERVAL '10' SECOND)
- ) AS AuctionBids
- JOIN (
-   SELECT
-     max(CountBids.num) AS maxn,
-     CountBids.starttime,
-     CountBids.endtime
-   FROM (
-     SELECT
-       count(*) AS num,
-       HOP_START(B2.dateTime, INTERVAL '2' SECOND, INTERVAL '10' SECOND) AS starttime,
-       HOP_END(B2.dateTime, INTERVAL '2' SECOND, INTERVAL '10' SECOND) AS endtime
-     FROM bid B2
-     GROUP BY
-       B2.auction,
-       HOP(B2.dateTime, INTERVAL '2' SECOND, INTERVAL '10' SECOND)
-     ) AS CountBids
-   GROUP BY CountBids.starttime, CountBids.endtime
- ) AS MaxBids
- ON AuctionBids.starttime = MaxBids.starttime AND
-    AuctionBids.endtime = MaxBids.endtime AND
-    AuctionBids.num >= MaxBids.maxn;
+SELECT
+  Q.auction,
+  sum(Q.num)
+FROM (
+       SELECT AuctionBids.auction, AuctionBids.num,
+              COALESCE(AuctionBids.window_start, MaxBids.window_start) as window_start,
+              COALESCE(AuctionBids.window_end, MaxBids.window_end) as window_end
+       FROM (
+              SELECT
+                auction,
+                count(*) AS num,
+                window_start,
+                window_end
+              FROM TABLE(HOP(TABLE bid, DESCRIPTOR(dateTime), INTERVAL '2' SECOND, INTERVAL '10' SECOND))
+              GROUP BY
+                auction, window_start, window_end
+            ) AS AuctionBids
+              JOIN (
+         SELECT
+           max(CountBids.num) AS maxn,
+           CountBids.window_start,
+           CountBids.window_end
+         FROM (
+                SELECT
+                  count(*) AS num,
+                  window_start,
+                  window_end
+                FROM TABLE(HOP(TABLE bid, DESCRIPTOR(dateTime), INTERVAL '2' SECOND, INTERVAL '10' SECOND))
+                GROUP BY
+                  auction, window_start, window_end
+              ) AS CountBids
+         GROUP BY CountBids.window_start, CountBids.window_end
+       ) AS MaxBids
+                   ON AuctionBids.window_start = MaxBids.window_start AND
+                      AuctionBids.window_end = MaxBids.window_end AND
+                      AuctionBids.num >= MaxBids.maxn
+     ) Q
+GROUP BY Q.auction, Q.window_start, Q.window_end;
