@@ -57,9 +57,9 @@ public class Benchmark {
 	private static final Set<String> UNSUPPORTED_QUERIES = Collections.singleton("q6");
 
 	private static final Option LOCATION = new Option("l", "location", true,
-		"Nexmark directory.");
+			"Nexmark directory.");
 	private static final Option QUERIES = new Option("q", "queries", true,
-		"Query to run. If the value is 'all', all queries will be run.");
+			"Query to run. If the value is 'all', all queries will be run.");
 	private static final Option CATEGORY = new Option("c", "category", true,
 			"Query category.");
 
@@ -68,12 +68,12 @@ public class Benchmark {
 	private static final Option SNAPSHOTGROUPS = new Option("g", "snapshotgroups", true,
 			"Comma separated indexes of snapshot groups to be created");
 
-	private static final Option SLOTSHARINGGROUPS = new Option("s", "slotsharinggroups", true,
+	private static final Option SLOTSHARINGGROUPS = new Option("ss", "slotsharinggroups", true,
 			"Comma separated indexes of slot sharing groups to be created");
 
 	public static void main(String[] args) throws ParseException {
 		if (args == null || args.length == 0) {
-			throw new RuntimeException("Usage: --queries q1,q3 --category oa --location /path/to/nexmark -g <snapshotgroups> -s <slotsharinggroups>");
+			throw new RuntimeException("Usage: --queries q1,q3 --category oa --location /path/to/nexmark -g <snapshotgroups> -ss <slotsharinggroups>");
 		}
 		Options options = getOptions();
 		DefaultParser parser = new DefaultParser();
@@ -145,7 +145,7 @@ public class Benchmark {
 			File queriesDir = queryLocation.toFile();
 			if (!queriesDir.exists()) {
 				throw new IllegalArgumentException(
-					String.format("The queries dir \"%s\" does not exist.", queryLocation));
+						String.format("The queries dir \"%s\" does not exist.", queryLocation));
 			}
 			for (int i = 0; i < 100; i++) {
 				String queryName = "q" + i;
@@ -165,7 +165,7 @@ public class Benchmark {
 				File queryFile = new File(queryLocation.toFile(), queryName + ".sql");
 				if (!queryFile.exists()) {
 					throw new IllegalArgumentException(
-						String.format("The query path \"%s\" does not exist.", queryFile.getAbsolutePath()));
+							String.format("The query path \"%s\" does not exist.", queryFile.getAbsolutePath()));
 				}
 				queryList.add(queryName);
 			}
@@ -280,10 +280,10 @@ public class Benchmark {
 		for (Map.Entry<String, JobBenchmarkMetric> entry : totalMetrics.entrySet()) {
 			JobBenchmarkMetric metric = entry.getValue();
 			printLine(' ', "|", itemMaxLength,
-				entry.getKey(),
-				metric.getPrettyTps(),
-				metric.getPrettyCpu(),
-				metric.getPrettyTpsPerCore());
+					entry.getKey(),
+					metric.getPrettyTps(),
+					metric.getPrettyCpu(),
+					metric.getPrettyTpsPerCore());
 			totalTpsPerCore += metric.getTpsPerCore();
 		}
 		printLine(' ', "|", itemMaxLength,
@@ -295,10 +295,10 @@ public class Benchmark {
 	}
 
 	private static void printLine(
-		char charToFill,
-		String separator,
-		int itemMaxLength,
-		String... items) {
+			char charToFill,
+			String separator,
+			int itemMaxLength,
+			String... items) {
 		StringBuilder builder = new StringBuilder();
 		for (String item : items) {
 			builder.append(separator);
@@ -318,6 +318,7 @@ public class Benchmark {
 		options.addOption(CATEGORY);
 		options.addOption(LOCATION);
 		options.addOption(SNAPSHOTGROUPS);
+		options.addOption(SLOTSHARINGGROUPS);
 		return options;
 	}
 }

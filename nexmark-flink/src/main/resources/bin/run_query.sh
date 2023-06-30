@@ -32,12 +32,12 @@ SLOTSHARINGGROUPS=""
 if [ $# -gt 3 ]; then
     CATEGORY="$1"
     QUERY="$2"
-    SNAPSHOTGROUPS="$3"
-    SLOTSHARINGGROUPS="$4"
+    SLOTSHARINGGROUPS="$3"
+    SNAPSHOTGROUPS="$4"
 elif [ $# -gt 2 ]; then
     CATEGORY="$1"
     QUERY="$2"
-    SNAPSHOTGROUPS="$3"
+    SLOTSHARINGGROUPS="$3"
 elif [ $# -gt 1 ]; then
     CATEGORY="$1"
     QUERY="$2"
@@ -48,4 +48,4 @@ fi
 log=$NEXMARK_LOG_DIR/nexmark-flink.log
 log_setting=(-Dlog.file="$log" -Dlog4j.configuration=file:"$NEXMARK_CONF_DIR"/log4j.properties -Dlog4j.configurationFile=file:"$NEXMARK_CONF_DIR"/log4j.properties)
 
-java "${log_setting[@]}" -cp "$NEXMARK_HOME/lib/*:$FLINK_HOME/lib/*" com.github.nexmark.flink.Benchmark --location "$NEXMARK_HOME" --queries "$QUERY" --category "$CATEGORY" -g "$SNAPSHOTGROUPS" -s "$SLOTSHARINGGROUPS"
+java "${log_setting[@]}" -cp "$NEXMARK_HOME/lib/*:$FLINK_HOME/lib/*" com.github.nexmark.flink.Benchmark --location "$NEXMARK_HOME" --queries "$QUERY" --category "$CATEGORY" -ss "$SLOTSHARINGGROUPS" -g "$SNAPSHOTGROUPS"

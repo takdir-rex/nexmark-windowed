@@ -188,22 +188,28 @@ public class QueryRunner {
 		final List<String> commands = new ArrayList<>();
 		commands.add(flinkBin.resolve("sql-client.sh").toAbsolutePath().toString());
 		commands.add("embedded");
-		commands.add("-g");
-		commands.add(snapshotGroups);
-		commands.add("-s");
-		commands.add(slotsharingtGroups);
+		if(!snapshotGroups.isEmpty()){
+			System.out.println("SG: " + snapshotGroups);
+			commands.add("-g");
+			commands.add(snapshotGroups);
+		}
+		if(!slotsharingtGroups.isEmpty()){
+			System.out.println("SS: " + slotsharingtGroups);
+			commands.add("-ss");
+			commands.add(slotsharingtGroups);
+		}
 
 		LOG.info("\n================================================================================"
-				+ "\nQuery {} is running."
-				+ "\n--------------------------------------------------------------------------------"
-				+ "\n"
-			, queryName);
+						+ "\nQuery {} is running."
+						+ "\n--------------------------------------------------------------------------------"
+						+ "\n"
+				, queryName);
 
 		AutoClosableProcess
-			.create(commands.toArray(new String[0]))
-			.setStdInputs(sqlLines.toArray(new String[0]))
-			.setStdoutProcessor(LOG::info) // logging the SQL statements and error message
-			.runBlocking();
+				.create(commands.toArray(new String[0]))
+				.setStdInputs(sqlLines.toArray(new String[0]))
+				.setStdoutProcessor(LOG::info) // logging the SQL statements and error message
+				.runBlocking();
 	}
 
 }
